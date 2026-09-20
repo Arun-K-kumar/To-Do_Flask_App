@@ -50,7 +50,8 @@ def read_todos():
     for todo in todos:
         status = "✓" if todo["completed"] else "○"
         priority_color = {"high": "[HIGH]", "medium": "[MED]", "low": "[LOW]"}
-        print(f"{todo['id']}. {status} [{priority_color.get(todo['priority'], '[?]}')] {todo['description']}")
+        priority_display = priority_color.get(todo['priority'], '[?]')
+        print(f"{todo['id']}. {status} [{priority_display}] {todo['description']}")
         print(f"   Created: {todo['created_at']}")
     print()
 
