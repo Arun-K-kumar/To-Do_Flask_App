@@ -35,7 +35,6 @@ def create_todo(description, priority="medium"):
     todos = load_todos()
     todo_id = len(todos) + 1
     todo = {
-        "_id": str(todo_id),
         "description": description,
         "priority": priority,
         "completed": False,
@@ -97,7 +96,11 @@ def api_get_todos():
     # Convert ObjectId to string for JSON serialization
     serialized_todos = []
     for todo in todos:
-        if '_id' in todo:
+        if '_id' in todo and hasattr(todo['_id'], 'to_hex'):
+            todo_copy = dict(todo)
+            todo_copy['id'] = str(todo['_id'])
+            serialized_todos.append(todo_copy)
+        elif '_id' in todo:
             todo_copy = dict(todo)
             todo_copy['id'] = str(todo['_id'])
             serialized_todos.append(todo_copy)
