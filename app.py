@@ -35,7 +35,7 @@ def create_todo(description, priority="medium"):
     todos = load_todos()
     todo_id = len(todos) + 1
     todo = {
-        "id": str(todo_id),
+        "_id": str(todo_id),
         "description": description,
         "priority": priority,
         "completed": False,
@@ -50,7 +50,7 @@ def update_todo(todo_id, description=None, priority=None, completed=None):
     todos = load_todos()
     
     for i, todo in enumerate(todos):
-        if str(todo["id"]) == str(todo_id):
+        if str(todo.get("_id", "")) == str(todo_id):
             if description is not None:
                 todos[i]["description"] = description
             if priority is not None:
@@ -65,7 +65,7 @@ def update_todo(todo_id, description=None, priority=None, completed=None):
 
 def delete_todo(todo_id):
     """Delete a todo item."""
-    result = collection.delete_one({"id": str(todo_id)})
+    result = collection.delete_one({"_id": str(todo_id)})
     if result.deleted_count > 0:
         return True
     return False
@@ -76,8 +76,8 @@ def toggle_complete(todo_id):
     todos = load_todos()
     
     for i, todo in enumerate(todos):
-        if str(todo["id"]) == str(todo_id):
-            collection.update_one({"id": str(todo_id)}, {"$set": {"completed": not todo["completed"]}})
+        if str(todo.get("_id", "")) == str(todo_id):
+            collection.update_one({"_id": str(todo_id)}, {"$set": {"completed": not todo["completed"]}})
             return todos[i]
     
     return None
@@ -125,7 +125,7 @@ def api_get_todo(todo_id):
     """API endpoint to get a single todo."""
     todos = load_todos()
     for todo in todos:
-        if str(todo['id']) == str(todo_id):
+        if str(todo.get("_id", "")) == str(todo_id):
             return jsonify(todo)
     return jsonify({'error': 'Todo not found'}), 404
 
