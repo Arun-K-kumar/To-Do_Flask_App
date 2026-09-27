@@ -1,25 +1,30 @@
 import json
 import os
 from datetime import datetime
+from pymongo import MongoClient
+from dotenv import load_dotenv
 
-TODO_FILE = "todos.json"
+load_dotenv()
+
+MONGODB_URI = os.getenv("MONGODB_URI", "mongodb+srv://Vercel-Admin-anonymodb:gT9ms2NvudGoMJIJ@anonymodb.zsfrs5v.mongodb.net/?retryWrites=true&w=majority")
+DB_NAME = "todo_app"
+COLLECTION_NAME = "todos"
+
+client = MongoClient(MONGODB_URI)
+db = client[DB_NAME]
+collection = db[COLLECTION_NAME]
 
 
 def load_todos():
-    """Load todos from the JSON file."""
-    if not os.path.exists(TODO_FILE):
-        return []
-    try:
-        with open(TODO_FILE, 'r') as f:
-            return json.load(f)
-    except (json.JSONDecodeError, IOError):
-        return []
+    """Load todos from MongoDB."""
+    return list(collection.find())
 
 
 def save_todos(todos):
-    """Save todos to the JSON file."""
-    with open(TODO_FILE, 'w') as f:
-        json.dump(todos, f, indent=2)
+    """Save todos to MongoDB."""
+    collection.delete_many({})
+    for todo in todos:
+        collection.insert_one(todo)
 
 
 def create_todo(description, priority="medium"):
@@ -33,8 +38,7 @@ def create_todo(description, priority="medium"):
         "completed": False,
         "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
-    todos.append(todo)
-    save_todos(todos)
+    collection.insert_one(todo)
     print(f"✓ Todo created with ID: {todo_id}")
     return todo
 
@@ -81,7 +85,7 @@ def delete_todo(todo_id):
     
     for i, todo in enumerate(todos):
         if todo["id"] == todo_id:
-            todos.pop(i)
+            collection.delete_one({"id": todo_id})
             save_todos(todos)
             print(f"✓ Todo {todo_id} deleted!")
             return
@@ -95,7 +99,7 @@ def toggle_complete(todo_id):
     
     for i, todo in enumerate(todos):
         if todo["id"] == todo_id:
-            todos[i]["completed"] = not todos[i]["completed"]
+            collection.update_one({"id": todo_id}, {"$set": {"completed": not todo["completed"]}})
             save_todos(todos)
             status = "completed" if todos[i]["completed"] else "incomplete"
             print(f"✓ Todo {todo_id} is now {status}!")
