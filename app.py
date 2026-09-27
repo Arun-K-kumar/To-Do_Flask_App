@@ -18,6 +18,19 @@ db = client[DB_NAME]
 collection = db[COLLECTION_NAME]
 
 
+def serialize_todo(todo):
+    """Convert ObjectId to string for JSON serialization."""
+    if '_id' in todo and hasattr(todo['_id'], 'to_hex'):
+        todo_copy = dict(todo)
+        todo_copy['id'] = str(todo['_id'])
+        return todo_copy
+    elif '_id' in todo:
+        todo_copy = dict(todo)
+        todo_copy['id'] = str(todo['_id'])
+        return todo_copy
+    return todo
+
+
 def load_todos():
     """Load todos from MongoDB."""
     return list(collection.find())
@@ -41,7 +54,7 @@ def create_todo(description, priority="medium"):
         "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
     collection.insert_one(todo)
-    return todo
+    return serialize_todo(todo)
 
 
 def update_todo(todo_id, description=None, priority=None, completed=None):
@@ -57,7 +70,7 @@ def update_todo(todo_id, description=None, priority=None, completed=None):
             if completed is not None:
                 todos[i]["completed"] = completed
             save_todos(todos)
-            return todos[i]
+            return serialize_todo(todos[i])
     
     return None
 
@@ -77,7 +90,7 @@ def toggle_complete(todo_id):
     for i, todo in enumerate(todos):
         if str(todo.get("_id", "")) == str(todo_id):
             collection.update_one({"_id": str(todo_id)}, {"$set": {"completed": not todo["completed"]}})
-            return todos[i]
+            return serialize_todo(todos[i])
     
     return None
 
@@ -86,26 +99,15 @@ def toggle_complete(todo_id):
 def index():
     """Render the main to-do list page."""
     todos = load_todos()
-    return render_template('index.html', todos=todos)
+    serialized_todos = [serialize_todo(todo) for todo in todos]
+    return render_template('index.html', todos=serialized_todos)
 
 
 @app.route('/api/todos', methods=['GET'])
 def api_get_todos():
     """API endpoint to get all todos."""
     todos = load_todos()
-    # Convert ObjectId to string for JSON serialization
-    serialized_todos = []
-    for todo in todos:
-        if '_id' in todo and hasattr(todo['_id'], 'to_hex'):
-            todo_copy = dict(todo)
-            todo_copy['id'] = str(todo['_id'])
-            serialized_todos.append(todo_copy)
-        elif '_id' in todo:
-            todo_copy = dict(todo)
-            todo_copy['id'] = str(todo['_id'])
-            serialized_todos.append(todo_copy)
-        else:
-            serialized_todos.append(todo)
+    serialized_todos = [serialize_todo(todo) for todo in todos]
     return jsonify(serialized_todos)
 
 
@@ -129,7 +131,7 @@ def api_get_todo(todo_id):
     todos = load_todos()
     for todo in todos:
         if str(todo.get("_id", "")) == str(todo_id):
-            return jsonify(todo)
+            return jsonify(serialize_todo(todo))
     return jsonify({'error': 'Todo not found'}), 404
 
 
