@@ -20,11 +20,8 @@ collection = db[COLLECTION_NAME]
 
 def serialize_todo(todo):
     """Convert ObjectId to string for JSON serialization."""
-    if '_id' in todo and hasattr(todo['_id'], 'to_hex'):
-        todo_copy = dict(todo)
-        todo_copy['id'] = str(todo['_id'])
-        return todo_copy
-    elif '_id' in todo:
+    if '_id' in todo:
+        # Convert ObjectId to string - this works for both ObjectId and regular strings
         todo_copy = dict(todo)
         todo_copy['id'] = str(todo['_id'])
         return todo_copy
