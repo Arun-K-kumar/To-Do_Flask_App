@@ -101,10 +101,17 @@ def update_todo(todo_id, description=None, priority=None, completed=None):
 
 def delete_todo(todo_id):
     """Delete a todo item."""
-    result = collection.delete_one({"_id": ObjectId(str(todo_id))})
-    if result.deleted_count > 0:
-        return True
-    return False
+    try:
+        result = collection.delete_one({"_id": ObjectId(str(todo_id))})
+        print(f"Delete operation completed, deleted {result.deleted_count} document(s)")
+        if result.deleted_count > 0:
+            return True
+        return False
+    except Exception as e:
+        import traceback
+        error_msg = f"Error deleting todo: {str(e)}\n{traceback.format_exc()}"
+        print(error_msg)
+        raise
 
 
 def toggle_complete(todo_id):
@@ -220,6 +227,7 @@ def api_delete_todo(todo_id):
     """API endpoint to delete a todo."""
     try:
         result = collection.delete_one({"_id": ObjectId(str(todo_id))})
+        print(f"Delete operation completed, deleted {result.deleted_count} document(s)")
         if result.deleted_count > 0:
             todos = load_todos()
             serialized_todos = [serialize_todo(todo) for todo in todos]
@@ -227,7 +235,8 @@ def api_delete_todo(todo_id):
         return jsonify({'error': 'Todo not found'}), 404
     except Exception as e:
         import traceback
-        print(f"Error deleting todo: {str(e)}\n{traceback.format_exc()}")
+        error_msg = f"Error deleting todo: {str(e)}\n{traceback.format_exc()}"
+        print(error_msg)
         return jsonify({'error': f'Failed to delete todo: {str(e)}'}), 500
 
 
