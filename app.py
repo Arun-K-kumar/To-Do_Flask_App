@@ -113,15 +113,25 @@ def api_get_todos():
 @app.route('/api/todos', methods=['POST'])
 def api_create_todo():
     """API endpoint to create a new todo."""
-    data = request.get_json()
-    description = data.get('description', '')
-    priority = data.get('priority', 'medium')
-    
-    if not description:
-        return jsonify({'error': 'Description is required'}), 400
-    
-    todo = create_todo(description, priority)
-    return jsonify(todo), 201
+    try:
+        data = request.get_json() or {}
+        description = (data.get('description') or '').strip()
+        priority = data.get('priority', 'medium')
+        
+        if not description:
+            return jsonify({'error': 'Description is required'}), 400
+        
+        # Validate priority
+        valid_priorities = ['high', 'medium', 'low']
+        if priority not in valid_priorities:
+            priority = 'medium'
+        
+        todo = create_todo(description, priority)
+        return jsonify(todo), 201
+    except Exception as e:
+        import traceback
+        print(f"Error creating todo: {traceback.format_exc()}")
+        return jsonify({'error': 'Failed to create todo'}), 500
 
 
 @app.route('/api/todos/<todo_id>')
@@ -137,16 +147,26 @@ def api_get_todo(todo_id):
 @app.route('/api/todos/<todo_id>', methods=['PUT'])
 def api_update_todo(todo_id):
     """API endpoint to update a todo."""
-    data = request.get_json()
-    
-    description = data.get('description')
-    priority = data.get('priority')
-    completed = data.get('completed')
-    
-    todo = update_todo(todo_id, description=description, priority=priority, completed=completed)
-    if todo:
-        return jsonify(todo)
-    return jsonify({'error': 'Todo not found'}), 404
+    try:
+        data = request.get_json() or {}
+        
+        description = (data.get('description') or '').strip() if data.get('description') else None
+        priority = data.get('priority')
+        completed = data.get('completed')
+        
+        # Validate priority if provided
+        valid_priorities = ['high', 'medium', 'low']
+        if priority and priority not in valid_priorities:
+            return jsonify({'error': 'Invalid priority'}), 400
+        
+        todo = update_todo(todo_id, description=description, priority=priority, completed=completed)
+        if todo:
+            return jsonify(todo)
+        return jsonify({'error': 'Todo not found'}), 404
+    except Exception as e:
+        import traceback
+        print(f"Error updating todo: {traceback.format_exc()}")
+        return jsonify({'error': 'Failed to update todo'}), 500
 
 
 @app.route('/api/todos/<todo_id>', methods=['DELETE'])

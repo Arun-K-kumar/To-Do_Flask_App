@@ -87,6 +87,7 @@
                             <button type="submit" class="btn btn-add w-100">Add</button>
                         </div>
                     </form>
+                    <div id="createError" class="alert alert-danger mt-2 d-none"></div>
                 </div>
             </div>
 
@@ -162,6 +163,11 @@
             const description = document.getElementById('newDescription').value.trim();
             const priority = document.getElementById('newPriority').value;
 
+            if (!description) {
+                showCreateError('Description is required');
+                return;
+            }
+
             try {
                 const response = await fetch('/api/todos', {
                     method: 'POST',
@@ -171,14 +177,28 @@
 
                 if (response.ok) {
                     document.getElementById('addTodoForm').reset();
+                    hideCreateError();
                     loadTodos();
                 } else {
-                    alert('Failed to create todo');
+                    const errorData = await response.json().catch(() => ({}));
+                    showCreateError(errorData.error || 'Failed to create todo');
                 }
             } catch (error) {
                 console.error('Error:', error);
+                showCreateError('Network error. Please try again.');
             }
         });
+
+        function showCreateError(message) {
+            const errorDiv = document.getElementById('createError');
+            errorDiv.textContent = message;
+            errorDiv.classList.remove('d-none');
+        }
+
+        function hideCreateError() {
+            const errorDiv = document.getElementById('createError');
+            errorDiv.classList.add('d-none');
+        }
 
         // Save Edit
         document.getElementById('saveEditBtn').addEventListener('click', async () => {
@@ -248,14 +268,21 @@
                         const id = e.target.dataset.id;
                         try {
                             const response = await fetch(`/api/todos/${id}`);
+                            if (!response.ok) throw new Error('Failed to load todo');
                             const todo = await response.json();
-                            currentEditId = id;
-                            document.getElementById('editId').value = id;
-                            document.getElementById('editDescription').value = todo.description;
-                            document.getElementById('editPriority').value = todo.priority;
+                            
+                            // Handle ObjectId properly - ensure it's a string
+                            currentEditId = String(id);
+                            document.getElementById('editId').value = String(todo.id || '');
+                            document.getElementById('editDescription').value = todo.description || '';
+                            document.getElementById('editPriority').value = todo.priority || 'medium';
+                            
                             const modal = new bootstrap.Modal(document.getElementById('editModal'));
                             modal.show();
-                        } catch (error) { console.error('Error:', error); }
+                        } catch (error) { 
+                            console.error('Error:', error);
+                            alert('Failed to load todo for editing');
+                        }
                     });
                 });
 
