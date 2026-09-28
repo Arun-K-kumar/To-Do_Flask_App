@@ -102,11 +102,22 @@ def update_todo(todo_id, description=None, priority=None, completed=None):
 def delete_todo(todo_id):
     """Delete a todo item."""
     try:
+        # Validate ObjectId format before conversion
+        import re
+        if not re.match(r'^[0-9a-fA-F]{24}$', str(todo_id)):
+            print(f"Invalid ObjectId format for todo_id: {todo_id}")
+            return False
+        
         result = collection.delete_one({"_id": ObjectId(str(todo_id))})
         print(f"Delete operation completed, deleted {result.deleted_count} document(s)")
         if result.deleted_count > 0:
             return True
         return False
+    except ValueError as e:
+        import traceback
+        error_msg = f"ObjectId conversion error - invalid format: {str(e)}\n{traceback.format_exc()}"
+        print(error_msg)
+        raise
     except Exception as e:
         import traceback
         error_msg = f"Error deleting todo: {str(e)}\n{traceback.format_exc()}"
@@ -226,6 +237,12 @@ def api_update_todo(todo_id):
 def api_delete_todo(todo_id):
     """API endpoint to delete a todo."""
     try:
+        # Validate ObjectId format before conversion
+        import re
+        if not re.match(r'^[0-9a-fA-F]{24}$', str(todo_id)):
+            print(f"Invalid ObjectId format for todo_id: {todo_id}")
+            return jsonify({'error': 'Invalid todo ID format'}), 400
+        
         result = collection.delete_one({"_id": ObjectId(str(todo_id))})
         print(f"Delete operation completed, deleted {result.deleted_count} document(s)")
         if result.deleted_count > 0:
@@ -233,6 +250,11 @@ def api_delete_todo(todo_id):
             serialized_todos = [serialize_todo(todo) for todo in todos]
             return jsonify({'message': 'Todo deleted successfully', 'todos': serialized_todos})
         return jsonify({'error': 'Todo not found'}), 404
+    except ValueError as e:
+        import traceback
+        error_msg = f"ObjectId conversion error - invalid format: {str(e)}\n{traceback.format_exc()}"
+        print(error_msg)
+        return jsonify({'error': 'Invalid ObjectId format'}), 400
     except Exception as e:
         import traceback
         error_msg = f"Error deleting todo: {str(e)}\n{traceback.format_exc()}"
