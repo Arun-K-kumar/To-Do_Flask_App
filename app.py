@@ -18,6 +18,12 @@ client = MongoClient(MONGODB_URI)
 db = client[DB_NAME]
 collection = db[COLLECTION_NAME]
 
+# Verify connection by running a ping command
+try:
+    client.admin.command('ping')
+except Exception as e:
+    print(f"MongoDB connection failed: {e}")
+
 
 def serialize_todo(todo):
     """Convert ObjectId to string for JSON serialization."""
@@ -43,16 +49,22 @@ def save_todos(todos):
 
 def create_todo(description, priority="medium"):
     """Create a new todo item."""
-    todos = load_todos()
-    todo = {
-        "description": description,
-        "priority": priority,
-        "completed": False,
-        "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    }
-    result = collection.insert_one(todo)
-    todo['_id'] = str(result.inserted_id)
-    return serialize_todo(todo)
+    try:
+        todos = load_todos()
+        todo = {
+            "description": description,
+            "priority": priority,
+            "completed": False,
+            "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }
+        result = collection.insert_one(todo)
+        if not result.acknowledged:
+            raise Exception("Insert not acknowledged by MongoDB")
+        todo['_id'] = str(result.inserted_id)
+        return serialize_todo(todo)
+    except Exception as e:
+        print(f"Error creating todo: {e}")
+        return None
 
 
 def update_todo(todo_id, description=None, priority=None, completed=None):
@@ -97,17 +109,27 @@ def toggle_complete(todo_id):
 @app.route('/')
 def index():
     """Render the main to-do list page."""
-    todos = load_todos()
-    serialized_todos = [serialize_todo(todo) for todo in todos]
-    return render_template('index.html', todos=serialized_todos)
+    try:
+        todos = load_todos()
+        serialized_todos = [serialize_todo(todo) for todo in todos]
+        return render_template('index.html', todos=serialized_todos)
+    except Exception as e:
+        import traceback
+        print(f"Error loading todos for index: {traceback.format_exc()}")
+        return render_template('index.html', todos=[]), 500
 
 
 @app.route('/api/todos', methods=['GET'])
 def api_get_todos():
     """API endpoint to get all todos."""
-    todos = load_todos()
-    serialized_todos = [serialize_todo(todo) for todo in todos]
-    return jsonify(serialized_todos)
+    try:
+        todos = load_todos()
+        serialized_todos = [serialize_todo(todo) for todo in todos]
+        return jsonify(serialized_todos)
+    except Exception as e:
+        import traceback
+        print(f"Error getting todos: {traceback.format_exc()}")
+        return jsonify({'error': 'Failed to get todos'}), 500
 
 
 @app.route('/api/todos', methods=['POST'])
@@ -123,10 +145,13 @@ def api_create_todo():
         
         # Validate priority
         valid_priorities = ['high', 'medium', 'low']
-        if priority not in valid_priorities:
+        if priority and priority not in valid_priorities:
             priority = 'medium'
         
         todo = create_todo(description, priority)
+        if not todo:
+            return jsonify({'error': 'Failed to create todo'}), 500
+        
         return jsonify(todo), 201
     except Exception as e:
         import traceback
@@ -137,11 +162,16 @@ def api_create_todo():
 @app.route('/api/todos/<todo_id>')
 def api_get_todo(todo_id):
     """API endpoint to get a single todo."""
-    todos = load_todos()
-    for todo in todos:
-        if str(todo.get("_id", "")) == str(todo_id):
-            return jsonify(serialize_todo(todo))
-    return jsonify({'error': 'Todo not found'}), 404
+    try:
+        todos = load_todos()
+        for todo in todos:
+            if str(todo.get("_id", "")) == str(todo_id):
+                return jsonify(serialize_todo(todo))
+        return jsonify({'error': 'Todo not found'}), 404
+    except Exception as e:
+        import traceback
+        print(f"Error getting todo: {traceback.format_exc()}")
+        return jsonify({'error': 'Failed to get todo'}), 500
 
 
 @app.route('/api/todos/<todo_id>', methods=['PUT'])
@@ -160,9 +190,9 @@ def api_update_todo(todo_id):
             return jsonify({'error': 'Invalid priority'}), 400
         
         todo = update_todo(todo_id, description=description, priority=priority, completed=completed)
-        if todo:
-            return jsonify(todo)
-        return jsonify({'error': 'Todo not found'}), 404
+        if not todo:
+            return jsonify({'error': 'Todo not found'}), 404
+        return jsonify(todo)
     except Exception as e:
         import traceback
         print(f"Error updating todo: {traceback.format_exc()}")
@@ -172,21 +202,31 @@ def api_update_todo(todo_id):
 @app.route('/api/todos/<todo_id>', methods=['DELETE'])
 def api_delete_todo(todo_id):
     """API endpoint to delete a todo."""
-    result = collection.delete_one({"_id": ObjectId(str(todo_id))})
-    if result.deleted_count > 0:
-        todos = load_todos()
-        serialized_todos = [serialize_todo(todo) for todo in todos]
-        return jsonify({'message': 'Todo deleted successfully', 'todos': serialized_todos})
-    return jsonify({'error': 'Todo not found'}), 404
+    try:
+        result = collection.delete_one({"_id": ObjectId(str(todo_id))})
+        if result.deleted_count > 0:
+            todos = load_todos()
+            serialized_todos = [serialize_todo(todo) for todo in todos]
+            return jsonify({'message': 'Todo deleted successfully', 'todos': serialized_todos})
+        return jsonify({'error': 'Todo not found'}), 404
+    except Exception as e:
+        import traceback
+        print(f"Error deleting todo: {traceback.format_exc()}")
+        return jsonify({'error': 'Failed to delete todo'}), 500
 
 
 @app.route('/api/todos/<todo_id>/toggle', methods=['POST'])
 def api_toggle_complete(todo_id):
     """API endpoint to toggle completion status."""
-    todo = toggle_complete(todo_id)
-    if todo:
+    try:
+        todo = toggle_complete(todo_id)
+        if not todo:
+            return jsonify({'error': 'Todo not found'}), 404
         return jsonify(todo)
-    return jsonify({'error': 'Todo not found'}), 404
+    except Exception as e:
+        import traceback
+        print(f"Error toggling todo: {traceback.format_exc()}")
+        return jsonify({'error': 'Failed to toggle todo'}), 500
 
 
 if __name__ == '__main__':
