@@ -227,8 +227,8 @@ def api_delete_todo(todo_id):
         return jsonify({'error': 'Todo not found'}), 404
     except Exception as e:
         import traceback
-        print(f"Error deleting todo: {traceback.format_exc()}")
-        return jsonify({'error': 'Failed to delete todo'}), 500
+        print(f"Error deleting todo: {str(e)}\n{traceback.format_exc()}")
+        return jsonify({'error': f'Failed to delete todo: {str(e)}'}), 500
 
 
 @app.route('/api/todos/<todo_id>/toggle', methods=['POST'])
