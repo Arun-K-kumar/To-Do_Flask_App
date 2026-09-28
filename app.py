@@ -109,7 +109,7 @@ def update_todo(todo_id, description=None, priority=None, completed=None):
 def delete_todo(todo_id):
     """Delete a todo item."""
     # Validate ObjectId format before deletion attempt
-    if not re.match(r'^[0-9a-fA-F]{24}$', str(todo_id)):
+    if not ObjectId(todo_id).is_valid():
         logger.warning(f"Invalid ObjectId format for todo_id: {todo_id}")
         return False
     
@@ -241,7 +241,7 @@ def api_update_todo(todo_id):
 def api_delete_todo(todo_id):
     """API endpoint to delete a todo."""
     # Validate ObjectId format before deletion attempt
-    if not re.match(r'^[0-9a-fA-F]{24}$', str(todo_id)):
+    if not ObjectId(todo_id).is_valid():
         logger.warning(f"Invalid ObjectId format for todo_id in API request: {todo_id}")
         return jsonify({'error': 'Invalid todo ID format'}), 400
     
