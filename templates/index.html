@@ -182,7 +182,7 @@
 
         // Save Edit
         document.getElementById('saveEditBtn').addEventListener('click', async () => {
-            const id = parseInt(document.getElementById('editId').value);
+            const id = document.getElementById('editId').value;
             const description = document.getElementById('editDescription').value.trim();
             const priority = document.getElementById('editPriority').value;
 
@@ -198,22 +198,6 @@
                     loadTodos();
                 } else {
                     alert('Failed to update todo');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-            }
-        });
-
-        // Confirm Delete
-        document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
-            const id = currentDeleteId;
-            try {
-                const response = await fetch(`/api/todos/${id}`, { method: 'DELETE' });
-                if (response.ok) {
-                    bootstrap.Modal.getInstance(document.getElementById('deleteModal')).hide();
-                    loadTodos();
-                } else {
-                    alert('Failed to delete todo');
                 }
             } catch (error) {
                 console.error('Error:', error);
@@ -261,7 +245,7 @@
 
                 document.querySelectorAll('.edit-btn').forEach(btn => {
                     btn.addEventListener('click', async (e) => {
-                        const id = parseInt(e.target.dataset.id);
+                        const id = e.target.dataset.id;
                         try {
                             const response = await fetch(`/api/todos/${id}`);
                             const todo = await response.json();
@@ -277,7 +261,7 @@
 
                 document.querySelectorAll('.delete-btn').forEach(btn => {
                     btn.addEventListener('click', async (e) => {
-                        const id = parseInt(e.target.dataset.id);
+                        const id = e.target.dataset.id;
                         try {
                             const response = await fetch(`/api/todos/${id}`, { method: 'DELETE' });
                             if (response.ok) loadTodos();

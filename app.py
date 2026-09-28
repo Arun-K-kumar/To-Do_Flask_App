@@ -43,14 +43,14 @@ def save_todos(todos):
 def create_todo(description, priority="medium"):
     """Create a new todo item."""
     todos = load_todos()
-    todo_id = len(todos) + 1
     todo = {
         "description": description,
         "priority": priority,
         "completed": False,
         "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
-    collection.insert_one(todo)
+    result = collection.insert_one(todo)
+    todo['_id'] = str(result.inserted_id)
     return serialize_todo(todo)
 
 
@@ -122,7 +122,7 @@ def api_create_todo():
     return jsonify(todo), 201
 
 
-@app.route('/api/todos/<int:todo_id>', methods=['GET'])
+@app.route('/api/todos/<todo_id>')
 def api_get_todo(todo_id):
     """API endpoint to get a single todo."""
     todos = load_todos()
@@ -132,7 +132,7 @@ def api_get_todo(todo_id):
     return jsonify({'error': 'Todo not found'}), 404
 
 
-@app.route('/api/todos/<int:todo_id>', methods=['PUT'])
+@app.route('/api/todos/<todo_id>', methods=['PUT'])
 def api_update_todo(todo_id):
     """API endpoint to update a todo."""
     data = request.get_json()
@@ -147,7 +147,7 @@ def api_update_todo(todo_id):
     return jsonify({'error': 'Todo not found'}), 404
 
 
-@app.route('/api/todos/<int:todo_id>', methods=['DELETE'])
+@app.route('/api/todos/<todo_id>', methods=['DELETE'])
 def api_delete_todo(todo_id):
     """API endpoint to delete a todo."""
     if delete_todo(todo_id):
@@ -155,7 +155,7 @@ def api_delete_todo(todo_id):
     return jsonify({'error': 'Todo not found'}), 404
 
 
-@app.route('/api/todos/<int:todo_id>/toggle', methods=['POST'])
+@app.route('/api/todos/<todo_id>/toggle', methods=['POST'])
 def api_toggle_complete(todo_id):
     """API endpoint to toggle completion status."""
     todo = toggle_complete(todo_id)
