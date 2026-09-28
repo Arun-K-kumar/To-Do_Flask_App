@@ -2,6 +2,7 @@ import json
 import os
 from datetime import datetime
 from flask import Flask, render_template, request, jsonify, redirect, url_for
+from bson import ObjectId
 from pymongo import MongoClient
 from dotenv import load_dotenv
 
@@ -74,7 +75,7 @@ def update_todo(todo_id, description=None, priority=None, completed=None):
 
 def delete_todo(todo_id):
     """Delete a todo item."""
-    result = collection.delete_one({"_id": str(todo_id)})
+    result = collection.delete_one({"_id": ObjectId(str(todo_id))})
     if result.deleted_count > 0:
         return True
     return False
@@ -86,7 +87,8 @@ def toggle_complete(todo_id):
     
     for i, todo in enumerate(todos):
         if str(todo.get("_id", "")) == str(todo_id):
-            collection.update_one({"_id": str(todo_id)}, {"$set": {"completed": not todo["completed"]}})
+            collection.update_one({"_id": ObjectId(str(todo_id))}, {"$set": {"completed": not todo["completed"]}})
+            todos[i]["completed"] = not todo["completed"]
             return serialize_todo(todos[i])
     
     return None

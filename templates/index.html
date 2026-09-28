@@ -235,7 +235,7 @@
                 // Attach event listeners to newly created elements
                 document.querySelectorAll('.todo-item').forEach(item => {
                     item.addEventListener('click', async (e) => {
-                        const id = parseInt(item.dataset.id);
+                        const id = item.dataset.id;
                         try {
                             const response = await fetch(`/api/todos/${id}/toggle`, { method: 'POST' });
                             if (response.ok) loadTodos();
