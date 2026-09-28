@@ -283,3 +283,58 @@ def api_toggle_complete(todo_id):
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
+
+
+def run_tests():
+    """Run unit tests for delete_todo and api_delete_todo ObjectId validation."""
+    import unittest
+    
+    class TestDeleteTodoObjectIdValidation(unittest.TestCase):
+        def setUp(self):
+            self.app = Flask(__name__)
+            
+        def test_delete_todo_invalid_objectid_format_returns_false(self):
+            # Test that invalid ObjectId format returns False
+            result = delete_todo("invalid-format")
+            self.assertFalse(result, "Invalid ObjectId should return False")
+        
+        def test_delete_todo_valid_objectid_format_not_rejected(self):
+            # Test that valid ObjectId format doesn't raise validation error
+            valid_id = "507f1f77bcf86cd799439011"
+            try:
+                result = delete_todo(valid_id)
+                # Should not raise ValueError for invalid ObjectId conversion
+                self.assertTrue(isinstance(result, bool))
+            except ValueError as e:
+                self.fail(f"Valid ObjectId should not raise ValueError: {e}")
+        
+        def test_api_delete_todo_invalid_objectid_returns_400(self):
+            # Test API endpoint rejects invalid ObjectId format with 400
+            response = self.app.test_client().post(
+                '/api/todos/invalid-format',
+                method='DELETE'
+            )
+            self.assertEqual(response.status_code, 400)
+        
+        def test_api_delete_todo_valid_objectid_not_rejected(self):
+            # Test API endpoint accepts valid ObjectId format
+            valid_id = "507f1f77bcf86cd799439011"
+            response = self.app.test_client().post(
+                f'/api/todos/{valid_id}',
+                method='DELETE'
+            )
+            # Should not return 400 for invalid format
+            self.assertNotEqual(response.status_code, 400)
+    
+    suite = unittest.TestLoader().loadTestsFromTestCase(TestDeleteTodoObjectIdValidation)
+    runner = unittest.TextTestRunner(verbosity=2)
+    result = runner.run(suite)
+    
+    if result.wasSuccessful():
+        print("\n✓ All ObjectId validation tests passed!")
+    else:
+        print(f"\n✗ {len(result.failures)} test(s) failed")
+
+
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=5000)
