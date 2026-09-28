@@ -1,5 +1,6 @@
 import json
 import os
+import traceback
 from datetime import datetime
 from flask import Flask, render_template, request, jsonify, redirect, url_for
 from bson import ObjectId
@@ -11,7 +12,7 @@ load_dotenv()
 app = Flask(__name__)
 
 MONGODB_URI = os.getenv("MONGODB_URI", "mongodb+srv://Vercel-Admin-anonymodb:gT9ms2NvudGoMJIJ@anonymodb.zsfrs5v.mongodb.net/?retryWrites=true&w=majority")
-DB_NAME = "anonymodb"
+DB_NAME = "todo_app"
 COLLECTION_NAME = "todos"
 
 client = MongoClient(MONGODB_URI)
@@ -20,9 +21,12 @@ collection = db[COLLECTION_NAME]
 
 # Verify connection by running a ping command
 try:
-    client.admin.command('ping')
+    result = client.admin.command('ping')
+    print("MongoDB connection successful")
 except Exception as e:
-    print(f"MongoDB connection failed: {e}")
+    error_msg = f"MongoDB connection failed: {str(e)}\n{traceback.format_exc()}"
+    print(error_msg)
+    raise ConnectionError(f"Cannot connect to MongoDB: {e}") from e
 
 
 def serialize_todo(todo):
@@ -37,7 +41,16 @@ def serialize_todo(todo):
 
 def load_todos():
     """Load todos from MongoDB."""
-    return list(collection.find())
+    try:
+        result = collection.find()
+        todos = list(result)
+        print(f"Loaded {len(todos)} todos from MongoDB")
+        return todos
+    except Exception as e:
+        import traceback
+        error_msg = f"Error loading todos: {str(e)}\n{traceback.format_exc()}"
+        print(error_msg)
+        raise
 
 
 def save_todos(todos):
@@ -125,11 +138,13 @@ def api_get_todos():
     try:
         todos = load_todos()
         serialized_todos = [serialize_todo(todo) for todo in todos]
+        print(f"Successfully retrieved {len(serialized_todos)} todos")
         return jsonify(serialized_todos)
     except Exception as e:
         import traceback
-        print(f"Error getting todos: {traceback.format_exc()}")
-        return jsonify({'error': 'Failed to get todos'}), 500
+        error_msg = f"Error getting todos: {str(e)}\n{traceback.format_exc()}"
+        print(error_msg)
+        return jsonify({'error': 'Failed to get todos', 'details': str(e)}), 500
 
 
 @app.route('/api/todos', methods=['POST'])
