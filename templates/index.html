@@ -217,10 +217,12 @@
                     bootstrap.Modal.getInstance(document.getElementById('editModal')).hide();
                     loadTodos();
                 } else {
-                    alert('Failed to update todo');
+                    const errorData = await response.json().catch(() => ({}));
+                    alert(errorData.error || 'Failed to update todo');
                 }
             } catch (error) {
                 console.error('Error:', error);
+                alert('Network error. Please try again.');
             }
         });
 
@@ -255,6 +257,7 @@
                 // Attach event listeners to newly created elements
                 document.querySelectorAll('.todo-item').forEach(item => {
                     item.addEventListener('click', async (e) => {
+                        e.stopPropagation();
                         const id = item.dataset.id;
                         try {
                             const response = await fetch(`/api/todos/${id}/toggle`, { method: 'POST' });
@@ -288,6 +291,7 @@
 
                 document.querySelectorAll('.delete-btn').forEach(btn => {
                     btn.addEventListener('click', async (e) => {
+                        e.stopPropagation();
                         const id = e.target.dataset.id;
                         try {
                             const response = await fetch(`/api/todos/${id}`, { method: 'DELETE' });

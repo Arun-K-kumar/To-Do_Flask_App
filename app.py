@@ -172,8 +172,11 @@ def api_update_todo(todo_id):
 @app.route('/api/todos/<todo_id>', methods=['DELETE'])
 def api_delete_todo(todo_id):
     """API endpoint to delete a todo."""
-    if delete_todo(todo_id):
-        return jsonify({'message': 'Todo deleted successfully'})
+    result = collection.delete_one({"_id": ObjectId(str(todo_id))})
+    if result.deleted_count > 0:
+        todos = load_todos()
+        serialized_todos = [serialize_todo(todo) for todo in todos]
+        return jsonify({'message': 'Todo deleted successfully', 'todos': serialized_todos})
     return jsonify({'error': 'Todo not found'}), 404
 
 
