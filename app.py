@@ -11,7 +11,7 @@ load_dotenv()
 app = Flask(__name__)
 
 MONGODB_URI = os.getenv("MONGODB_URI", "mongodb+srv://Vercel-Admin-anonymodb:gT9ms2NvudGoMJIJ@anonymodb.zsfrs5v.mongodb.net/?retryWrites=true&w=majority")
-DB_NAME = "todo_app"
+DB_NAME = "anonymodb"
 COLLECTION_NAME = "todos"
 
 client = MongoClient(MONGODB_URI)
