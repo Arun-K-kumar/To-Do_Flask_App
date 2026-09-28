@@ -249,9 +249,13 @@ def api_delete_todo(todo_id):
         result = collection.delete_one({"_id": ObjectId(str(todo_id))})
         logger.info(f"Delete operation completed, deleted {result.deleted_count} document(s)")
         if result.deleted_count > 0:
-            todos = load_todos()
-            serialized_todos = [serialize_todo(todo) for todo in todos]
-            return jsonify({'message': 'Todo deleted successfully', 'todos': serialized_todos})
+            try:
+                todos = load_todos()
+                serialized_todos = [serialize_todo(todo) for todo in todos]
+                return jsonify({'message': 'Todo deleted successfully', 'todos': serialized_todos})
+            except Exception as reload_error:
+                logger.error(f"Error reloading todos after delete: {reload_error}")
+                return jsonify({'error': 'Failed to refresh todo list'}), 500
         return jsonify({'error': 'Todo not found'}), 404
     except ValueError as e:
         error_msg = f"ObjectId conversion error - invalid format: {str(e)}\n{traceback.format_exc()}"
