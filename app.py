@@ -35,6 +35,7 @@ def serialize_todo(todo):
         # Convert ObjectId to string - this works for both ObjectId and regular strings
         todo_copy = dict(todo)
         todo_copy['id'] = str(todo['_id'])
+        del todo_copy['_id']  # Remove the original _id field (still an ObjectId)
         return todo_copy
     return todo
 
