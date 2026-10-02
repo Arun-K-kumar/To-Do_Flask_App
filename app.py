@@ -48,9 +48,9 @@ def serialize_todo(todo):
 
 
 def load_todos():
-    """Load todos from MongoDB."""
+    """Load todos from MongoDB, sorted by created_at descending (recent first)."""
     try:
-        result = collection.find()
+        result = collection.find().sort([("created_at", -1)])
         todos = list(result)
         print(f"Loaded {len(todos)} todos from MongoDB")
         return todos

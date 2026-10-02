@@ -16,8 +16,8 @@ collection = db[COLLECTION_NAME]
 
 
 def load_todos():
-    """Load todos from MongoDB."""
-    return list(collection.find())
+    """Load todos from MongoDB, sorted by created_at descending (recent first)."""
+    return list(collection.find().sort([("created_at", -1)]))
 
 
 def save_todos(todos):
