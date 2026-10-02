@@ -18,7 +18,7 @@ load_dotenv()
 app = Flask(__name__)
 CORS(app)
 
-MONGODB_URI = os.getenv("MONGODB_URI", "mongodb+srv://Vercel-Admin-anonymodb:gT9ms2NvudGoMJIJ@anonymodb.zsfrs5v.mongodb.net/?retryWrites=true&w=majority")
+MONGODB_URI = os.getenv("MONGODB_URI")
 DB_NAME = "todo_app"
 COLLECTION_NAME = "todos"
 
